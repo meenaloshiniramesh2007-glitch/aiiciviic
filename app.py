@@ -233,18 +233,35 @@ def complaint():
         user_phone = user_row["phone"] if user_row else ""
 
         # ── Save complaint ────────────────────────────────────────────────────
-        cur = conn.execute(
-            """INSERT INTO complaints
-               (user_id, user_name, user_phone, department, category, location,
-                description, description_lang, image, video, voice_transcript,
-                status, priority, ai_category, ai_confidence, ai_image_label)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,  'Pending',?,?,?,?)""",
-            (session["user_id"], session["user"], user_phone,
-             department, ai_category, location,
-             description, desc_lang, image_filename, video_filename, voice_transcript,
-             priority, ai_category, ai_confidence, ai_image_label)
-        )
-        complaint_id = cur.lastrowid
+        from database.database import USE_POSTGRES
+        if USE_POSTGRES:
+            # PostgreSQL: use RETURNING id to get the new row's id
+            cur = conn.execute(
+                """INSERT INTO complaints
+                   (user_id, user_name, user_phone, department, category, location,
+                    description, description_lang, image, video, voice_transcript,
+                    status, priority, ai_category, ai_confidence, ai_image_label)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'Pending',%s,%s,%s,%s)
+                   RETURNING id""",
+                (session["user_id"], session["user"], user_phone,
+                 department, ai_category, location,
+                 description, desc_lang, image_filename, video_filename, voice_transcript,
+                 priority, ai_category, ai_confidence, ai_image_label)
+            )
+            complaint_id = cur.fetchone()["id"]
+        else:
+            cur = conn.execute(
+                """INSERT INTO complaints
+                   (user_id, user_name, user_phone, department, category, location,
+                    description, description_lang, image, video, voice_transcript,
+                    status, priority, ai_category, ai_confidence, ai_image_label)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,  'Pending',?,?,?,?)""",
+                (session["user_id"], session["user"], user_phone,
+                 department, ai_category, location,
+                 description, desc_lang, image_filename, video_filename, voice_transcript,
+                 priority, ai_category, ai_confidence, ai_image_label)
+            )
+            complaint_id = cur.lastrowid
         conn.commit()
 
         # ── Auto-generate and save complaint letter ───────────────────────────

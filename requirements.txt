@@ -3,6 +3,11 @@ Flask==3.1.3
 Werkzeug==3.1.8
 gunicorn==23.0.0
 
+# ── Database ──────────────────────────────────────────────────────────────────
+# psycopg2-binary: PostgreSQL driver (used on Render)
+# SQLite is built into Python — no package needed for local dev
+psycopg2-binary==2.9.9
+
 # ── ML / Text Classifier ──────────────────────────────────────────────────────
 scikit-learn==1.9.1
 pandas==3.0.6
