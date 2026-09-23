@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Dashboard — AI Civic Guardian</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#f0f4f8; color:#333; }
+    nav { background:#1a237e; color:#fff; padding:14px 32px; display:flex; justify-content:space-between; align-items:center; }
+    nav h1 { font-size:1.2rem; }
+    nav div a { color:#fff; text-decoration:none; margin-left:14px; font-size:.9rem; }
+    .container { max-width:960px; margin:32px auto; padding:0 16px; }
+    .welcome { background:#fff; border-radius:10px; padding:22px 28px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+    .welcome h2 { color:#1a237e; }
+    .welcome p  { color:#666; font-size:.9rem; margin-top:4px; }
+    .btn { display:inline-block; padding:10px 22px; background:#1a237e; color:#fff; border-radius:6px; text-decoration:none; font-size:.9rem; font-weight:600; }
+    .btn:hover { background:#283593; }
+    .btn-green { background:#2e7d32; }
+    .btn-green:hover { background:#388e3c; }
+    .flash { padding:10px 14px; border-radius:6px; margin-bottom:14px; font-size:.88rem; }
+    .flash.success { background:#e8f5e9; color:#2e7d32; border-left:4px solid #43a047; }
+    .flash.error   { background:#ffebee; color:#c62828; border-left:4px solid #ef5350; }
+    .section-title { font-size:1.1rem; font-weight:600; color:#1a237e; margin-bottom:16px; }
+    table { width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+    th { background:#1a237e; color:#fff; padding:12px 14px; font-size:.85rem; text-align:left; }
+    td { padding:12px 14px; font-size:.85rem; border-bottom:1px solid #eee; vertical-align:top; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:#f5f7ff; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:.75rem; font-weight:600; }
+    .badge-pending    { background:#fff3e0; color:#e65100; }
+    .badge-progress   { background:#e3f2fd; color:#0d47a1; }
+    .badge-resolved   { background:#e8f5e9; color:#2e7d32; }
+    .badge-rejected   { background:#ffebee; color:#c62828; }
+    .empty-state { text-align:center; padding:60px 20px; color:#999; }
+    .empty-state .icon { font-size:3rem; margin-bottom:12px; }
+    .ai-tag { font-size:.75rem; color:#5c35c8; background:#ede7f6; padding:2px 8px; border-radius:10px; }
+    .desc-cell { max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  </style>
+</head>
+<body>
+<nav>
+  <h1>🏛️ AI Civic Guardian</h1>
+  <div>
+    <a href="{{ url_for('complaint') }}">+ New Complaint</a>
+    <a href="{{ url_for('track') }}">Track</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+  </div>
+</nav>
+
+<div class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="flash {{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="welcome">
+    <div>
+      <h2>Welcome, {{ user }} 👋</h2>
+      <p>Here are all your submitted complaints.</p>
+    </div>
+    <a href="{{ url_for('complaint') }}" class="btn btn-green">+ Submit Complaint</a>
+  </div>
+
+  <div class="section-title">My Complaints ({{ complaints|length }})</div>
+
+  {% if complaints %}
+  <table>
+    <thead>
+      <tr>
+        <th>#ID</th>
+        <th>Department</th>
+        <th>Location</th>
+        <th>Description</th>
+        <th>AI Detected</th>
+        <th>Status</th>
+        <th>Date</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for c in complaints %}
+      <tr>
+        <td><strong>#{{ c['id'] }}</strong></td>
+        <td>{{ c['department'] }}</td>
+        <td>{{ c['location'] }}</td>
+        <td class="desc-cell" title="{{ c['description'] }}">{{ c['description'] }}</td>
+        <td>
+          {% if c['ai_category'] %}
+            <span class="ai-tag">🤖 {{ c['ai_category'] }}</span>
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          {% set s = c['status'] %}
+          {% if s == 'Pending' %}
+            <span class="badge badge-pending">{{ s }}</span>
+          {% elif s == 'In Progress' %}
+            <span class="badge badge-progress">{{ s }}</span>
+          {% elif s == 'Resolved' %}
+            <span class="badge badge-resolved">{{ s }}</span>
+          {% else %}
+            <span class="badge badge-rejected">{{ s }}</span>
+          {% endif %}
+        </td>
+        <td>{{ c['submitted_at'][:10] if c['submitted_at'] else '—' }}</td>
+        <td><a href="{{ url_for('complaint_letter', complaint_id=c['id']) }}" class="btn" style="padding:5px 12px;font-size:.8rem;">View</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <div class="icon">📋</div>
+    <p>No complaints submitted yet.</p>
+    <br/>
+    <a href="{{ url_for('complaint') }}" class="btn">Submit Your First Complaint</a>
+  </div>
+  {% endif %}
+</div>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard — AI Civic Guardian</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#f0f4f8; }
+    nav { background:#4a148c; color:#fff; padding:14px 32px; display:flex; justify-content:space-between; align-items:center; }
+    nav h1 { font-size:1.2rem; }
+    nav a  { color:#fff; text-decoration:none; margin-left:14px; font-size:.9rem; }
+    .container { max-width:1100px; margin:28px auto; padding:0 16px 40px; }
+    h2 { color:#4a148c; margin-bottom:20px; }
+    .stats { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:28px; }
+    .stat-card { background:#fff; border-radius:10px; padding:18px 22px; flex:1; min-width:120px; box-shadow:0 2px 8px rgba(0,0,0,.06); text-align:center; }
+    .stat-card .num { font-size:2rem; font-weight:700; }
+    .stat-card .lbl { font-size:.78rem; color:#888; margin-top:4px; }
+    .stat-card.c1 .num { color:#4a148c; }
+    .stat-card.c2 .num { color:#1b5e20; }
+    .stat-card.c3 .num { color:#e65100; }
+    .stat-card.c4 .num { color:#0d47a1; }
+    .tabs { display:flex; gap:0; margin-bottom:0; border-bottom:2px solid #e0e0e0; }
+    .tab { padding:10px 24px; cursor:pointer; font-size:.9rem; font-weight:600; color:#888; border-bottom:3px solid transparent; margin-bottom:-2px; }
+    .tab.active { color:#4a148c; border-bottom-color:#4a148c; }
+    .tab-content { display:none; padding-top:20px; }
+    .tab-content.active { display:block; }
+    table { width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+    th { background:#4a148c; color:#fff; padding:11px 12px; font-size:.82rem; text-align:left; }
+    td { padding:11px 12px; font-size:.82rem; border-bottom:1px solid #eee; vertical-align:top; }
+    tr:last-child td { border-bottom:none; }
+    .badge { display:inline-block; padding:3px 9px; border-radius:12px; font-size:.72rem; font-weight:600; }
+    .badge-pending  { background:#fff3e0; color:#e65100; }
+    .badge-progress { background:#e3f2fd; color:#0d47a1; }
+    .badge-resolved { background:#e8f5e9; color:#2e7d32; }
+    .badge-rejected { background:#ffebee; color:#c62828; }
+    .dept-bar { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #f0f0f0; }
+    .dept-bar .name { min-width:220px; font-size:.85rem; color:#444; }
+    .dept-bar .bar-wrap { flex:1; background:#e8eaf6; border-radius:4px; height:14px; overflow:hidden; }
+    .dept-bar .bar-fill { height:100%; background:#4a148c; border-radius:4px; }
+    .dept-bar .count { min-width:36px; text-align:right; font-size:.82rem; color:#888; }
+    .ai-status { display:flex; gap:16px; margin-bottom:24px; }
+    .ai-box { background:#fff; border-radius:8px; padding:14px 20px; flex:1; box-shadow:0 2px 6px rgba(0,0,0,.06); display:flex; align-items:center; gap:12px; }
+    .ai-box .dot { width:14px; height:14px; border-radius:50%; }
+    .dot-ready { background:#2e7d32; }
+    .dot-missing{ background:#c62828; }
+    .ai-box p { font-size:.85rem; }
+    .ai-box strong { display:block; font-size:.95rem; color:#333; }
+    .flash { padding:10px 14px; border-radius:6px; margin-bottom:14px; font-size:.88rem; }
+    .flash.success { background:#e8f5e9; color:#2e7d32; border-left:4px solid #43a047; }
+    .flash.error   { background:#ffebee; color:#c62828; border-left:4px solid #ef5350; }
+    .img-thumb { width:42px; height:42px; object-fit:cover; border-radius:4px; cursor:pointer; }
+  </style>
+</head>
+<body>
+<nav>
+  <h1>⚙️ Admin Dashboard — AI Civic Guardian</h1>
+  <div><a href="{{ url_for('logout') }}">Logout</a></div>
+</nav>
+
+<div class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="flash {{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <h2>System Overview</h2>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card c1"><div class="num">{{ stats.total_complaints }}</div><div class="lbl">Total Complaints</div></div>
+    <div class="stat-card c2"><div class="num">{{ stats.total_users }}</div>    <div class="lbl">Registered Users</div></div>
+    <div class="stat-card c3"><div class="num">{{ stats.pending }}</div>        <div class="lbl">Pending</div></div>
+    <div class="stat-card c4"><div class="num">{{ stats.in_progress }}</div>   <div class="lbl">In Progress</div></div>
+    <div class="stat-card">  <div class="num" style="color:#2e7d32">{{ stats.resolved }}</div><div class="lbl">Resolved</div></div>
+    <div class="stat-card">  <div class="num" style="color:#c62828">{{ stats.rejected }}</div><div class="lbl">Rejected</div></div>
+  </div>
+
+  <!-- AI Status -->
+  <div class="ai-status">
+    <div class="ai-box">
+      <div class="dot {{ 'dot-ready' if ai_status.text_model_ready else 'dot-missing' }}"></div>
+      <div>
+        <strong>Text Classifier</strong>
+        <p>{{ '✅ Model loaded and ready' if ai_status.text_model_ready else '⚠️ Not trained — run train_text_classifier.py' }}</p>
+      </div>
+    </div>
+    <div class="ai-box">
+      <div class="dot {{ 'dot-ready' if ai_status.image_model_ready else 'dot-missing' }}"></div>
+      <div>
+        <strong>Image Classifier</strong>
+        <p>{{ '✅ Model loaded and ready' if ai_status.image_model_ready else '⚠️ Not trained — run train_image_classifier.py' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('complaints',this)">All Complaints ({{ complaints|length }})</div>
+    <div class="tab"        onclick="showTab('users',this)">Users ({{ users|length }})</div>
+    <div class="tab"        onclick="showTab('depts',this)">By Department</div>
+  </div>
+
+  <!-- Complaints Tab -->
+  <div id="tab-complaints" class="tab-content active">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Citizen</th><th>Department</th><th>Location</th>
+          <th>Description</th><th>AI Category</th><th>Image</th>
+          <th>Status</th><th>Date</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for c in complaints %}
+      {% set s = c['status'] %}
+      <tr>
+        <td>#{{ c['id'] }}</td>
+        <td>{{ c['user_name'] or '—' }}</td>
+        <td>{{ c['department'] }}</td>
+        <td>{{ c['location'] }}</td>
+        <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ c['description'] }}">{{ c['description'] }}</td>
+        <td>
+          {% if c['ai_category'] %}<span style="font-size:.75rem;color:#5c35c8;">{{ c['ai_category'] }}</span>{% else %}—{% endif %}
+        </td>
+        <td>
+          {% if c['image'] %}
+            <img src="{{ url_for('static', filename='uploads/' ~ c['image']) }}" class="img-thumb" onclick="window.open(this.src)"/>
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          {% if s == 'Pending' %}      <span class="badge badge-pending">{{ s }}</span>
+          {% elif s == 'In Progress' %}<span class="badge badge-progress">{{ s }}</span>
+          {% elif s == 'Resolved' %}   <span class="badge badge-resolved">{{ s }}</span>
+          {% else %}                   <span class="badge badge-rejected">{{ s }}</span>
+          {% endif %}
+        </td>
+        <td>{{ c['submitted_at'][:10] if c['submitted_at'] else '—' }}</td>
+        <td><a href="{{ url_for('complaint_letter', complaint_id=c['id']) }}" style="font-size:.78rem;color:#4a148c;text-decoration:none;font-weight:600;">View</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="10" style="text-align:center;padding:40px;color:#999;">No complaints yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Users Tab -->
+  <div id="tab-users" class="tab-content">
+    <table>
+      <thead>
+        <tr><th>#ID</th><th>Name</th><th>Email</th><th>Phone</th></tr>
+      </thead>
+      <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ u['id'] }}</td>
+        <td>{{ u['name'] }}</td>
+        <td>{{ u['email'] }}</td>
+        <td>{{ u['phone'] or '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" style="text-align:center;padding:30px;color:#999;">No users registered yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Departments Tab -->
+  <div id="tab-depts" class="tab-content">
+    <div style="background:#fff;border-radius:10px;padding:24px 28px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+      <h3 style="color:#4a148c;margin-bottom:18px;">Complaints by Department</h3>
+      {% set max_count = dept_counts[0]['cnt'] if dept_counts else 1 %}
+      {% for row in dept_counts %}
+      <div class="dept-bar">
+        <div class="name">{{ row['department'] }}</div>
+        <div class="bar-wrap">
+          <div class="bar-fill" style="width:{{ (row['cnt'] / max_count * 100)|round }}%"></div>
+        </div>
+        <div class="count">{{ row['cnt'] }}</div>
+      </div>
+      {% else %}
+      <p style="color:#999;text-align:center;padding:30px;">No data yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+function showTab(name, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Complaint #{{ complaint['id'] }} — AI Civic Guardian</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#f0f4f8; }
+    nav { background:#1a237e; color:#fff; padding:14px 32px; display:flex; justify-content:space-between; align-items:center; }
+    nav h1 { font-size:1.2rem; }
+    nav a  { color:#fff; text-decoration:none; margin-left:14px; font-size:.9rem; }
+    .container { max-width:720px; margin:36px auto; padding:0 16px 60px; }
+    .letter { background:#fff; border-radius:12px; padding:40px 48px; box-shadow:0 4px 20px rgba(0,0,0,.1); }
+    .letter-header { text-align:center; border-bottom:2px solid #1a237e; padding-bottom:20px; margin-bottom:28px; }
+    .letter-header h2 { color:#1a237e; font-size:1.4rem; }
+    .letter-header p  { color:#666; font-size:.9rem; margin-top:4px; }
+    .ref-row { display:flex; justify-content:space-between; margin-bottom:24px; font-size:.88rem; color:#555; }
+    .section { margin-bottom:20px; }
+    .section label { font-size:.78rem; text-transform:uppercase; letter-spacing:.5px; color:#999; font-weight:600; display:block; margin-bottom:4px; }
+    .section .value { font-size:.95rem; color:#222; line-height:1.6; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:14px; font-size:.82rem; font-weight:700; }
+    .badge-pending  { background:#fff3e0; color:#e65100; }
+    .badge-progress { background:#e3f2fd; color:#0d47a1; }
+    .badge-resolved { background:#e8f5e9; color:#2e7d32; }
+    .badge-rejected { background:#ffebee; color:#c62828; }
+    .ai-box { background:#ede7f6; border-radius:8px; padding:14px 18px; margin-bottom:20px; }
+    .ai-box h4 { color:#4527a0; font-size:.88rem; margin-bottom:8px; }
+    .ai-row { display:flex; gap:12px; flex-wrap:wrap; }
+    .ai-chip { background:#fff; border-radius:6px; padding:6px 14px; font-size:.82rem; color:#333; }
+    .ai-chip span { color:#4527a0; font-weight:700; }
+    .complaint-image { margin-top:12px; }
+    .complaint-image img { max-width:100%; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,.1); max-height:300px; }
+    .divider { border:none; border-top:1px solid #eee; margin:20px 0; }
+    .footer-note { text-align:center; color:#aaa; font-size:.78rem; margin-top:28px; }
+    .print-btn { display:block; text-align:center; margin:24px 0 0; }
+    .print-btn button { padding:10px 28px; background:#1a237e; color:#fff; border:none; border-radius:6px; font-size:.9rem; cursor:pointer; }
+    .back-link { display:inline-block; margin-bottom:20px; color:#1a237e; text-decoration:none; font-size:.9rem; }
+    @media print {
+      nav, .print-btn, .back-link { display:none; }
+      body { background:#fff; }
+      .letter { box-shadow:none; }
+    }
+  </style>
+</head>
+<body>
+<nav>
+  <h1>🏛️ AI Civic Guardian</h1>
+  <div>
+    {% if session.role == 'officer' %}
+      <a href="{{ url_for('officer_dashboard') }}">Officer Dashboard</a>
+    {% elif session.role == 'admin' %}
+      <a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a>
+    {% else %}
+      <a href="{{ url_for('user_dashboard') }}">My Dashboard</a>
+    {% endif %}
+    <a href="{{ url_for('logout') }}">Logout</a>
+  </div>
+</nav>
+
+<div class="container">
+  <a href="javascript:history.back()" class="back-link">← Back</a>
+
+  <div class="letter">
+    <div class="letter-header">
+      <h2>🏛️ AI Civic Guardian</h2>
+      <p>Smart Civic Complaint Management System</p>
+    </div>
+
+    <div class="ref-row">
+      <span><strong>Complaint Ref:</strong> #{{ complaint['id'] }}</span>
+      <span><strong>Date:</strong> {{ complaint['submitted_at'][:10] if complaint['submitted_at'] else '—' }}</span>
+    </div>
+
+    <div class="section">
+      <label>Citizen Name</label>
+      <div class="value">{{ complaint['user_name'] or 'Anonymous' }}</div>
+    </div>
+
+    <div class="section">
+      <label>Department Assigned</label>
+      <div class="value"><strong>{{ complaint['department'] }}</strong></div>
+    </div>
+
+    <div class="section">
+      <label>Location</label>
+      <div class="value">{{ complaint['location'] }}</div>
+    </div>
+
+    <div class="section">
+      <label>Complaint Description</label>
+      <div class="value">{{ complaint['description'] }}</div>
+    </div>
+
+    <hr class="divider"/>
+
+    <!-- AI Analysis Box -->
+    {% if complaint['ai_category'] or complaint['ai_image_label'] %}
+    <div class="ai-box">
+      <h4>🤖 AI Analysis</h4>
+      <div class="ai-row">
+        {% if complaint['ai_category'] %}
+        <div class="ai-chip">Category: <span>{{ complaint['ai_category'] }}</span></div>
+        {% endif %}
+        {% if complaint['ai_confidence'] %}
+        <div class="ai-chip">Confidence: <span>{{ complaint['ai_confidence']|round(1) }}%</span></div>
+        {% endif %}
+        {% if complaint['ai_image_label'] %}
+        <div class="ai-chip">Image: <span>{{ complaint['ai_image_label'] }}</span></div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="section">
+      <label>Current Status</label>
+      <div class="value">
+        {% set s = complaint['status'] %}
+        {% if s == 'Pending' %}      <span class="badge badge-pending">{{ s }}</span>
+        {% elif s == 'In Progress' %}<span class="badge badge-progress">{{ s }}</span>
+        {% elif s == 'Resolved' %}   <span class="badge badge-resolved">{{ s }}</span>
+        {% else %}                   <span class="badge badge-rejected">{{ s }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if complaint['updated_at'] and complaint['updated_at'] != complaint['submitted_at'] %}
+    <div class="section">
+      <label>Last Updated</label>
+      <div class="value">{{ complaint['updated_at'][:16] if complaint['updated_at'] else '—' }}</div>
+    </div>
+    {% endif %}
+
+    {% if complaint['image'] %}
+    <div class="section">
+      <label>Attached Image</label>
+      <div class="complaint-image">
+        <img src="{{ url_for('static', filename='uploads/' ~ complaint['image']) }}" alt="Complaint Image"/>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="footer-note">
+      This is an auto-generated complaint record from the AI Civic Guardian system.<br/>
+      Complaint ID #{{ complaint['id'] }} — {{ complaint['submitted_at'][:16] if complaint['submitted_at'] else '' }}
+    </div>
+  </div>
+
+  <div class="print-btn">
+    <button onclick="window.print()">🖨️ Print / Save as PDF</button>
+  </div>
+</div>
+</body>
+</html>

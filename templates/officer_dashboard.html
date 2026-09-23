@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Officer Dashboard — AI Civic Guardian</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Segoe UI',sans-serif;background:#f0f4f8;}
+    nav{background:#1b5e20;color:#fff;padding:14px 32px;display:flex;justify-content:space-between;align-items:center;}
+    nav h1{font-size:1.2rem;}
+    nav a{color:#fff;text-decoration:none;margin-left:14px;font-size:.9rem;}
+    .container{max-width:1150px;margin:28px auto;padding:0 16px 50px;}
+    h2{color:#1b5e20;margin-bottom:20px;}
+
+    /* Stats row */
+    .stats{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:26px;}
+    .stat-card{background:#fff;border-radius:10px;padding:16px 20px;flex:1;min-width:110px;
+               box-shadow:0 2px 8px rgba(0,0,0,.06);text-align:center;}
+    .stat-card .num{font-size:1.8rem;font-weight:700;}
+    .stat-card .lbl{font-size:.75rem;color:#888;margin-top:3px;}
+    .stat-card.total    .num{color:#1b5e20;}
+    .stat-card.pending  .num{color:#e65100;}
+    .stat-card.progress .num{color:#0d47a1;}
+    .stat-card.resolved .num{color:#2e7d32;}
+    .stat-card.rejected .num{color:#c62828;}
+    .stat-card.letters  .num{color:#4a148c;}
+    .stat-card.high     .num{color:#c62828;}
+
+    /* Dept inbox strip */
+    .dept-strip{background:#fff;border-radius:10px;padding:18px 22px;margin-bottom:26px;
+                box-shadow:0 2px 8px rgba(0,0,0,.06);}
+    .dept-strip h3{font-size:.95rem;color:#1b5e20;margin-bottom:14px;}
+    .dept-links{display:flex;flex-wrap:wrap;gap:8px;}
+    .dept-link{padding:7px 14px;background:#e8f5e9;color:#1b5e20;border-radius:20px;
+               text-decoration:none;font-size:.8rem;font-weight:600;}
+    .dept-link:hover{background:#1b5e20;color:#fff;}
+    .dept-link .cnt{background:#1b5e20;color:#fff;border-radius:10px;padding:1px 7px;
+                    font-size:.7rem;margin-left:5px;}
+    .dept-link:hover .cnt{background:#fff;color:#1b5e20;}
+
+    /* Filters */
+    .filter-bar{background:#fff;border-radius:10px;padding:16px 22px;margin-bottom:22px;
+                box-shadow:0 2px 6px rgba(0,0,0,.05);display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .filter-bar select{padding:8px 12px;border:1px solid #ccc;border-radius:6px;font-size:.85rem;outline:none;}
+    .filter-bar button{padding:8px 18px;background:#1b5e20;color:#fff;border:none;border-radius:6px;
+                       cursor:pointer;font-size:.85rem;}
+    .filter-bar a{padding:8px 14px;background:#e8eaf6;color:#1a237e;border-radius:6px;text-decoration:none;font-size:.85rem;}
+
+    /* Table */
+    .table-wrap{overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;
+          overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+    th{background:#1b5e20;color:#fff;padding:11px 12px;font-size:.8rem;text-align:left;white-space:nowrap;}
+    td{padding:10px 12px;font-size:.8rem;border-bottom:1px solid #eee;vertical-align:middle;}
+    tr:last-child td{border-bottom:none;}
+    tr:hover td{background:#f1f8f1;}
+
+    .badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:.7rem;font-weight:700;}
+    .b-Pending  {background:#fff3e0;color:#e65100;}
+    .b-InProgress{background:#e3f2fd;color:#0d47a1;}
+    .b-Resolved {background:#e8f5e9;color:#2e7d32;}
+    .b-Rejected {background:#ffebee;color:#c62828;}
+    .b-High     {background:#ffebee;color:#c62828;}
+    .b-Medium   {background:#fff3e0;color:#e65100;}
+    .b-Normal   {background:#e8f5e9;color:#2e7d32;}
+
+    .action-links a,.action-links button{
+      display:inline-block;margin:2px 2px;padding:4px 9px;border-radius:4px;
+      text-decoration:none;font-size:.72rem;font-weight:700;border:none;cursor:pointer;}
+    .a-progress {background:#e3f2fd;color:#0d47a1;}
+    .a-resolve  {background:#e8f5e9;color:#2e7d32;}
+    .a-reject   {background:#ffebee;color:#c62828;}
+    .a-letter   {background:#ede7f6;color:#4a148c;}
+    .a-detail   {background:#e8eaf6;color:#1a237e;}
+
+    .img-thumb{width:44px;height:44px;object-fit:cover;border-radius:4px;cursor:pointer;}
+    .vid-icon{font-size:1.3rem;}
+    .ai-tag{font-size:.68rem;color:#5c35c8;background:#ede7f6;padding:2px 6px;border-radius:8px;}
+    .voice-dot{font-size:.75rem;color:#0288d1;}
+    .new-letter-dot{width:8px;height:8px;border-radius:50%;background:#4a148c;
+                    display:inline-block;margin-right:3px;}
+
+    .flash{padding:10px 14px;border-radius:6px;margin-bottom:14px;font-size:.88rem;}
+    .flash.success{background:#e8f5e9;color:#2e7d32;border-left:4px solid #43a047;}
+    .flash.error{background:#ffebee;color:#c62828;border-left:4px solid #ef5350;}
+  </style>
+</head>
+<body>
+<nav>
+  <h1>🛡️ Officer Dashboard — AI Civic Guardian</h1>
+  <div><a href="{{ url_for('logout') }}">Logout</a></div>
+</nav>
+
+<div class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="flash {{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <h2>Complaint Management</h2>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card total">   <div class="num">{{ counts.Total }}</div>      <div class="lbl">Total</div></div>
+    <div class="stat-card pending"> <div class="num">{{ counts.Pending }}</div>    <div class="lbl">Pending</div></div>
+    <div class="stat-card progress"><div class="num">{{ counts['In Progress'] }}</div><div class="lbl">In Progress</div></div>
+    <div class="stat-card resolved"><div class="num">{{ counts.Resolved }}</div>   <div class="lbl">Resolved</div></div>
+    <div class="stat-card rejected"><div class="num">{{ counts.Rejected }}</div>   <div class="lbl">Rejected</div></div>
+    <div class="stat-card letters"> <div class="num">{{ pending_letters }}</div>   <div class="lbl">Unread Letters</div></div>
+  </div>
+
+  <!-- Department inbox shortcuts -->
+  <div class="dept-strip">
+    <h3>📥 Department Inboxes — Click to view department-specific complaints + auto letters</h3>
+    <div class="dept-links">
+      {% for dept in departments %}
+        <a href="{{ url_for('dept_inbox', department=dept) }}" class="dept-link">
+          {{ dept }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <form class="filter-bar" method="GET" action="{{ url_for('officer_dashboard') }}">
+    <select name="status">
+      <option value="">All Statuses</option>
+      {% for s in status_list %}
+        <option value="{{ s }}" {{ 'selected' if selected_status==s }}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <select name="priority">
+      <option value="">All Priorities</option>
+      {% for p in priority_list %}
+        <option value="{{ p }}" {{ 'selected' if selected_priority==p }}>{{ p }}</option>
+      {% endfor %}
+    </select>
+    <select name="dept">
+      <option value="">All Departments</option>
+      {% for d in departments %}
+        <option value="{{ d }}" {{ 'selected' if selected_dept==d }}>{{ d }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Filter</button>
+    <a href="{{ url_for('officer_dashboard') }}">Reset</a>
+  </form>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Citizen</th>
+          <th>Department</th>
+          <th>Location</th>
+          <th>Description</th>
+          <th>AI / Voice</th>
+          <th>Media</th>
+          <th>Priority</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for c in complaints %}
+      {% set s = c['status'] %}
+      {% set p = c['priority'] or 'Normal' %}
+      <tr>
+        <td><strong>AICG-{{ "%05d"|format(c['id']) }}</strong></td>
+        <td>
+          {{ c['user_name'] or '—' }}<br/>
+          {% if c['user_phone'] %}<small style="color:#888;">{{ c['user_phone'] }}</small>{% endif %}
+        </td>
+        <td style="font-size:.75rem;">{{ c['department'] }}</td>
+        <td style="font-size:.78rem;">{{ c['location'] }}</td>
+        <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.78rem;"
+            title="{{ c['description'] }}">{{ c['description'] }}</td>
+        <td>
+          {% if c['ai_category'] %}<span class="ai-tag">{{ c['ai_category'] }}</span><br/>{% endif %}
+          {% if c['voice_transcript'] %}<span class="voice-dot">🎤 Voice</span>{% endif %}
+          {% if c['description_lang'] and c['description_lang'] != 'en' %}
+            <span style="font-size:.68rem;color:#e65100;">🌐 {{ c['description_lang']|upper }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if c['image'] %}
+            <img src="{{ url_for('static', filename='uploads/' ~ c['image']) }}"
+                 class="img-thumb" onclick="window.open(this.src)" title="Click to enlarge"/>
+          {% endif %}
+          {% if c['video'] %}<div class="vid-icon" title="Video attached">🎬</div>{% endif %}
+          {% if not c['image'] and not c['video'] %}<span style="color:#ccc;">—</span>{% endif %}
+        </td>
+        <td><span class="badge b-{{ p }}">{{ p }}</span></td>
+        <td>
+          {% if s == 'Pending' %}      <span class="badge b-Pending">{{ s }}</span>
+          {% elif s == 'In Progress' %}<span class="badge b-InProgress">{{ s }}</span>
+          {% elif s == 'Resolved' %}   <span class="badge b-Resolved">{{ s }}</span>
+          {% else %}                   <span class="badge b-Rejected">{{ s }}</span>
+          {% endif %}
+        </td>
+        <td style="font-size:.75rem;white-space:nowrap;">{{ c['submitted_at'][:10] if c['submitted_at'] else '—' }}</td>
+        <td class="action-links">
+          <a href="{{ url_for('view_auto_letter', complaint_id=c['id']) }}" class="a-letter">
+            {% if c['auto_letter'] %}<span class="new-letter-dot"></span>{% endif %}📄 Letter
+          </a>
+          {% if s != 'In Progress' %}
+            <a href="{{ url_for('update_status', complaint_id=c['id'], status='In Progress') }}" class="a-progress">▶ Progress</a>
+          {% endif %}
+          {% if s != 'Resolved' %}
+            <a href="{{ url_for('update_status', complaint_id=c['id'], status='Resolved') }}"   class="a-resolve">✅ Resolve</a>
+          {% endif %}
+          {% if s != 'Rejected' %}
+            <a href="{{ url_for('update_status', complaint_id=c['id'], status='Rejected') }}"   class="a-reject">✗ Reject</a>
+          {% endif %}
+          <a href="{{ url_for('complaint_letter', complaint_id=c['id']) }}" class="a-detail">🔍 View</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="11" style="text-align:center;padding:40px;color:#999;">No complaints found.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+</body>
+</html>

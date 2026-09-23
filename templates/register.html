@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register — AI Civic Guardian</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#f0f4f8; display:flex; flex-direction:column; min-height:100vh; }
+    nav { background:#1a237e; color:#fff; padding:14px 32px; display:flex; justify-content:space-between; align-items:center; }
+    nav h1 { font-size:1.2rem; }
+    nav a  { color:#fff; text-decoration:none; margin-left:14px; font-size:.9rem; }
+    .container { flex:1; display:flex; justify-content:center; align-items:center; padding:40px 16px; }
+    .card { background:#fff; border-radius:12px; padding:36px 40px; width:100%; max-width:440px; box-shadow:0 4px 20px rgba(0,0,0,.1); }
+    h2 { color:#1a237e; margin-bottom:6px; }
+    .subtitle { color:#888; font-size:.9rem; margin-bottom:24px; }
+    label { display:block; font-size:.85rem; font-weight:600; color:#444; margin-bottom:4px; margin-top:14px; }
+    input { width:100%; padding:10px 12px; border:1px solid #ccc; border-radius:6px; font-size:.95rem; outline:none; transition:border .2s; }
+    input:focus { border-color:#3949ab; }
+    .btn { width:100%; padding:12px; background:#1a237e; color:#fff; border:none; border-radius:6px; font-size:1rem; font-weight:600; cursor:pointer; margin-top:22px; }
+    .btn:hover { background:#283593; }
+    .login-link { text-align:center; margin-top:16px; font-size:.9rem; color:#666; }
+    .login-link a { color:#1a237e; text-decoration:none; font-weight:600; }
+    .flash { padding:10px 14px; border-radius:6px; margin-bottom:14px; font-size:.88rem; }
+    .flash.success { background:#e8f5e9; color:#2e7d32; border-left:4px solid #43a047; }
+    .flash.error   { background:#ffebee; color:#c62828; border-left:4px solid #ef5350; }
+  </style>
+</head>
+<body>
+<nav>
+  <h1>🏛️ AI Civic Guardian</h1>
+  <div><a href="{{ url_for('index') }}">Home</a><a href="{{ url_for('login') }}">Login</a></div>
+</nav>
+
+<div class="container">
+  <div class="card">
+    <h2>Create Account</h2>
+    <p class="subtitle">Register to report civic issues in your city</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="flash {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('register') }}">
+      <label>Full Name</label>
+      <input type="text" name="name" placeholder="Enter your full name" required/>
+
+      <label>Email Address</label>
+      <input type="email" name="email" placeholder="your@email.com" required/>
+
+      <label>Phone Number</label>
+      <input type="tel" name="phone" placeholder="10-digit mobile number"/>
+
+      <label>Password</label>
+      <input type="password" name="password" placeholder="Create a password" required/>
+
+      <button type="submit" class="btn">Register</button>
+    </form>
+
+    <div class="login-link">Already have an account? <a href="{{ url_for('login') }}">Login here</a></div>
+  </div>
+</div>
+</body>
+</html>

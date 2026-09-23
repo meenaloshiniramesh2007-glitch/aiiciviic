@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en" id="html-root">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Submit Complaint — AI Civic Guardian</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Segoe UI',sans-serif;background:#f0f4f8;color:#333;}
+    nav{background:#1a237e;color:#fff;padding:14px 32px;display:flex;justify-content:space-between;align-items:center;}
+    nav h1{font-size:1.2rem;}
+    nav a{color:#fff;text-decoration:none;margin-left:14px;font-size:.9rem;}
+    .container{max-width:740px;margin:32px auto;padding:0 16px 60px;}
+    .card{background:#fff;border-radius:12px;padding:32px 36px;box-shadow:0 4px 16px rgba(0,0,0,.08);}
+
+    /* ── Lang toggle ── */
+    .lang-bar{display:flex;justify-content:flex-end;gap:8px;margin-bottom:18px;}
+    .lang-btn{padding:6px 16px;border-radius:20px;border:2px solid #1a237e;background:#fff;color:#1a237e;font-size:.82rem;font-weight:700;cursor:pointer;}
+    .lang-btn.active{background:#1a237e;color:#fff;}
+
+    h2{color:#1a237e;margin-bottom:4px;}
+    .subtitle{color:#888;font-size:.9rem;margin-bottom:22px;}
+    label{display:block;font-size:.84rem;font-weight:600;color:#444;margin-top:18px;margin-bottom:5px;}
+    input,select,textarea{width:100%;padding:10px 12px;border:1px solid #ccc;border-radius:6px;font-size:.95rem;outline:none;font-family:inherit;transition:border .2s;}
+    input:focus,select:focus,textarea:focus{border-color:#3949ab;}
+    textarea{resize:vertical;min-height:90px;}
+
+    /* ── Voice section ── */
+    .voice-bar{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center;}
+    .voice-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:.85rem;font-weight:600;}
+    .voice-btn.start{background:#e8f5e9;color:#2e7d32;}
+    .voice-btn.stop{background:#ffebee;color:#c62828;display:none;}
+    .voice-btn:disabled{opacity:.5;cursor:not-allowed;}
+    .lang-select-voice{padding:7px 10px;border:1px solid #ccc;border-radius:6px;font-size:.82rem;}
+    .voice-status{font-size:.8rem;color:#888;margin-top:6px;min-height:18px;}
+    .recording-dot{width:10px;height:10px;border-radius:50%;background:#c62828;display:inline-block;margin-right:4px;animation:blink 1s infinite;}
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+    /* ── AI hint ── */
+    .ai-hint{margin-top:8px;padding:10px 14px;background:#ede7f6;border-radius:6px;font-size:.84rem;color:#4527a0;display:none;}
+    .ai-hint.show{display:block;}
+    .priority-badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:.75rem;font-weight:700;margin-left:8px;}
+    .p-High{background:#ffebee;color:#c62828;}
+    .p-Medium{background:#fff3e0;color:#e65100;}
+    .p-Normal{background:#e8f5e9;color:#2e7d32;}
+    #ai-spinner{display:none;font-size:.8rem;color:#888;margin-top:6px;}
+
+    /* ── Media preview ── */
+    .file-note{font-size:.78rem;color:#888;margin-top:4px;}
+    .preview-box{margin-top:10px;}
+    .preview-box img{max-width:100%;border-radius:8px;max-height:180px;display:none;}
+    .preview-box video{max-width:100%;border-radius:8px;max-height:200px;display:none;margin-top:6px;}
+
+    .btn{width:100%;padding:13px;background:#1a237e;color:#fff;border:none;border-radius:6px;font-size:1rem;font-weight:600;cursor:pointer;margin-top:24px;}
+    .btn:hover{background:#283593;}
+    .flash{padding:10px 14px;border-radius:6px;margin-bottom:14px;font-size:.88rem;}
+    .flash.success{background:#e8f5e9;color:#2e7d32;border-left:4px solid #43a047;}
+    .flash.error{background:#ffebee;color:#c62828;border-left:4px solid #ef5350;}
+    .section-divider{border:none;border-top:1px dashed #ddd;margin:22px 0;}
+    .section-label{font-size:.78rem;text-transform:uppercase;letter-spacing:.6px;color:#999;font-weight:700;margin-bottom:10px;}
+  </style>
+</head>
+<body>
+<nav>
+  <h1>🏛️ AI Civic Guardian</h1>
+  <div>
+    <a href="{{ url_for('user_dashboard') }}" data-en="Dashboard" data-ta="டாஷ்போர்டு">Dashboard</a>
+    <a href="{{ url_for('logout') }}" data-en="Logout" data-ta="வெளியேறு">Logout</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="lang-bar">
+    <button class="lang-btn active" onclick="setLang('en')" id="btn-en">English</button>
+    <button class="lang-btn"        onclick="setLang('ta')" id="btn-ta">தமிழ்</button>
+  </div>
+
+  <div class="card">
+    <h2 data-en="📝 Submit a Complaint" data-ta="📝 புகார் அளிக்கவும்">📝 Submit a Complaint</h2>
+    <p class="subtitle" data-en="Describe the civic issue. AI will classify and route it automatically."
+                        data-ta="பிரச்சனையை விவரிக்கவும். AI தானாகவே வகைப்படுத்தும்.">
+      Describe the civic issue. AI will classify and route it automatically.
+    </p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="flash {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('complaint') }}" enctype="multipart/form-data">
+      <input type="hidden" name="voice_transcript" id="voice_transcript"/>
+      <input type="hidden" name="desc_lang"        id="desc_lang" value="en"/>
+
+      <!-- ── DESCRIPTION ─────────────────────────────────────── -->
+      <label data-en="Complaint Description *" data-ta="புகார் விவரம் *">Complaint Description *</label>
+      <textarea name="description" id="description"
+        data-placeholder-en="Describe the problem in detail. E.g. 'Large pothole on MG Road near bus stop...'"
+        data-placeholder-ta="சிக்கலை விரிவாக விவரிக்கவும். எ.கா. 'பேருந்து நிறுத்தம் அருகே பெரிய குழி...'"
+        placeholder="Describe the problem in detail..." required></textarea>
+
+      <div id="ai-spinner">🤖 <span data-en="AI is analysing..." data-ta="AI பகுப்பாய்கிறது...">AI is analysing...</span></div>
+      <div class="ai-hint" id="ai-hint">
+        🤖 <strong data-en="AI Suggestion:" data-ta="AI பரிந்துரை:">AI Suggestion:</strong>
+        <span id="ai-category"></span> — <span id="ai-dept"></span>
+        <span id="ai-conf" style="color:#888;font-size:.78rem;"></span>
+        <span class="priority-badge" id="ai-priority"></span>
+      </div>
+
+      <!-- ── VOICE INPUT ──────────────────────────────────────── -->
+      <hr class="section-divider"/>
+      <div class="section-label" data-en="🎤 Voice Input" data-ta="🎤 குரல் உள்ளீடு">🎤 Voice Input</div>
+      <div class="voice-bar">
+        <button type="button" class="voice-btn start" id="btn-start-voice" onclick="startVoice()">
+          🎤 <span data-en="Start Recording" data-ta="பதிவு தொடங்கு">Start Recording</span>
+        </button>
+        <button type="button" class="voice-btn stop"  id="btn-stop-voice"  onclick="stopVoice()">
+          ⏹ <span data-en="Stop Recording" data-ta="பதிவை நிறுத்து">Stop Recording</span>
+        </button>
+        <select class="lang-select-voice" id="voice-lang-select" onchange="syncVoiceLang()">
+          <option value="en-IN">English (India)</option>
+          <option value="ta-IN">தமிழ் (Tamil)</option>
+          <option value="hi-IN">हिंदी (Hindi)</option>
+          <option value="te-IN">తెలుగు (Telugu)</option>
+          <option value="ml-IN">മലയാളം (Malayalam)</option>
+          <option value="kn-IN">ಕನ್ನಡ (Kannada)</option>
+        </select>
+      </div>
+      <div class="voice-status" id="voice-status"></div>
+
+      <hr class="section-divider"/>
+
+      <!-- ── DEPARTMENT ───────────────────────────────────────── -->
+      <label data-en="Department *" data-ta="துறை *">Department *</label>
+      <select name="department" id="department" required>
+        <option value="" data-en="-- Select Department --" data-ta="-- துறையை தேர்ந்தெடுக்கவும் --">-- Select Department --</option>
+        <option value="auto" data-en="🤖 Let AI Decide" data-ta="🤖 AI தேர்வு செய்யட்டும்">🤖 Let AI Decide</option>
+        {% for dept in departments %}
+          <option value="{{ dept }}">{{ dept }}</option>
+        {% endfor %}
+      </select>
+
+      <!-- ── LOCATION ─────────────────────────────────────────── -->
+      <label data-en="Location *" data-ta="இடம் *">Location *</label>
+      <input type="text" name="location" id="location"
+             data-placeholder-en="Street name, area, landmark..."
+             data-placeholder-ta="தெரு பெயர், பகுதி, அடையாளம்..."
+             placeholder="Street name, area, landmark..." required/>
+
+      <!-- ── IMAGE ────────────────────────────────────────────── -->
+      <hr class="section-divider"/>
+      <div class="section-label" data-en="📎 Evidence (Optional)" data-ta="📎 சான்று (விருப்பத்திற்கு)">📎 Evidence (Optional)</div>
+
+      <label data-en="Upload Image" data-ta="படம் பதிவேற்று">Upload Image</label>
+      <input type="file" name="image" id="image-input" accept=".jpg,.jpeg,.png,.gif,.webp"
+             onchange="previewImage(this)"/>
+      <p class="file-note" data-en="JPG, PNG, GIF, WEBP — max 100 MB"
+                           data-ta="JPG, PNG, GIF, WEBP — அதிகபட்சம் 100 MB">JPG, PNG, GIF, WEBP — max 100 MB</p>
+
+      <!-- ── VIDEO ────────────────────────────────────────────── -->
+      <label style="margin-top:14px;" data-en="Upload Video" data-ta="வீடியோ பதிவேற்று">Upload Video</label>
+      <input type="file" name="video" id="video-input" accept=".mp4,.webm,.ogg,.mov,.avi"
+             onchange="previewVideo(this)"/>
+      <p class="file-note" data-en="MP4, WEBM, MOV, AVI — max 100 MB"
+                           data-ta="MP4, WEBM, MOV, AVI — அதிகபட்சம் 100 MB">MP4, WEBM, MOV, AVI — max 100 MB</p>
+
+      <div class="preview-box">
+        <img   id="preview-img" src="" alt="Image Preview"/>
+        <video id="preview-vid" controls></video>
+      </div>
+
+      <button type="submit" class="btn"
+              data-en="Submit Complaint" data-ta="புகாரை சமர்ப்பிக்கவும்">Submit Complaint</button>
+    </form>
+  </div>
+</div>
+
+<script>
+// ─── LANGUAGE TRANSLATIONS ────────────────────────────────────────────────────
+const TRANSLATIONS = {
+  en: {
+    title        : "📝 Submit a Complaint",
+    subtitle     : "Describe the civic issue. AI will classify and route it automatically.",
+    desc_label   : "Complaint Description *",
+    desc_ph      : "Describe the problem in detail...",
+    voice_section: "🎤 Voice Input",
+    start_rec    : "Start Recording",
+    stop_rec     : "Stop Recording",
+    dept_label   : "Department *",
+    dept_ph      : "-- Select Department --",
+    ai_opt       : "🤖 Let AI Decide",
+    loc_label    : "Location *",
+    loc_ph       : "Street name, area, landmark...",
+    img_label    : "Upload Image",
+    vid_label    : "Upload Video",
+    submit_btn   : "Submit Complaint",
+    ai_suggest   : "AI Suggestion:",
+    evidence     : "📎 Evidence (Optional)",
+  },
+  ta: {
+    title        : "📝 புகார் அளிக்கவும்",
+    subtitle     : "பிரச்சனையை விவரிக்கவும். AI தானாகவே வகைப்படுத்தும்.",
+    desc_label   : "புகார் விவரம் *",
+    desc_ph      : "சிக்கலை விரிவாக விவரிக்கவும்...",
+    voice_section: "🎤 குரல் உள்ளீடு",
+    start_rec    : "பதிவு தொடங்கு",
+    stop_rec     : "பதிவை நிறுத்து",
+    dept_label   : "துறை *",
+    dept_ph      : "-- துறையை தேர்ந்தெடுக்கவும் --",
+    ai_opt       : "🤖 AI தேர்வு செய்யட்டும்",
+    loc_label    : "இடம் *",
+    loc_ph       : "தெரு பெயர், பகுதி, அடையாளம்...",
+    img_label    : "படம் பதிவேற்று",
+    vid_label    : "வீடியோ பதிவேற்று",
+    submit_btn   : "புகாரை சமர்ப்பிக்கவும்",
+    ai_suggest   : "AI பரிந்துரை:",
+    evidence     : "📎 சான்று (விருப்பத்திற்கு)",
+  }
+};
+
+let currentLang = 'en';
+
+function setLang(lang) {
+  currentLang = lang;
+  const t = TRANSLATIONS[lang];
+  document.getElementById('html-root').lang = lang;
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-ta').classList.toggle('active', lang === 'ta');
+  document.getElementById('desc_lang').value = lang;
+
+  // Update all data-en / data-ta elements
+  document.querySelectorAll('[data-en]').forEach(el => {
+    const key = el.getAttribute(`data-${lang}`);
+    if (key) {
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+        el.placeholder = key;
+      } else if (el.tagName === 'OPTION') {
+        el.textContent = key;
+      } else {
+        el.textContent = key;
+      }
+    }
+  });
+
+  // Placeholder via data-placeholder-* attributes
+  document.querySelectorAll('[data-placeholder-en]').forEach(el => {
+    el.placeholder = el.getAttribute(`data-placeholder-${lang}`) || el.placeholder;
+  });
+
+  // Sync voice language if Tamil selected
+  if (lang === 'ta') {
+    document.getElementById('voice-lang-select').value = 'ta-IN';
+  } else {
+    document.getElementById('voice-lang-select').value = 'en-IN';
+  }
+}
+
+function syncVoiceLang() {
+  const vl = document.getElementById('voice-lang-select').value;
+  document.getElementById('desc_lang').value = vl.split('-')[0];
+}
+
+
+// ─── VOICE INPUT ─────────────────────────────────────────────────────────────
+let recognition = null;
+let finalTranscript = '';
+
+function startVoice() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    setVoiceStatus('❌ Your browser does not support voice input. Use Chrome.');
+    return;
+  }
+
+  const lang = document.getElementById('voice-lang-select').value;
+  recognition = new SpeechRecognition();
+  recognition.lang = lang;
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  finalTranscript = '';
+
+  recognition.onstart = () => {
+    document.getElementById('btn-start-voice').style.display = 'none';
+    document.getElementById('btn-stop-voice').style.display  = 'inline-flex';
+    setVoiceStatus('<span class="recording-dot"></span> Recording... speak now');
+  };
+
+  recognition.onresult = (event) => {
+    let interim = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const t = event.results[i][0].transcript;
+      if (event.results[i].isFinal) finalTranscript += t + ' ';
+      else interim += t;
+    }
+    setVoiceStatus('<span class="recording-dot"></span> ' + (finalTranscript + interim).trim());
+  };
+
+  recognition.onerror = (e) => {
+    setVoiceStatus('⚠️ Error: ' + e.error + '. Try again.');
+    resetVoiceButtons();
+  };
+
+  recognition.onend = () => {
+    resetVoiceButtons();
+    if (finalTranscript.trim()) {
+      applyTranscript(finalTranscript.trim(), lang);
+    } else {
+      setVoiceStatus('No speech detected. Try again.');
+    }
+  };
+
+  recognition.start();
+}
+
+function stopVoice() {
+  if (recognition) recognition.stop();
+}
+
+function resetVoiceButtons() {
+  document.getElementById('btn-start-voice').style.display = 'inline-flex';
+  document.getElementById('btn-stop-voice').style.display  = 'none';
+}
+
+function applyTranscript(text, lang) {
+  document.getElementById('description').value       = text;
+  document.getElementById('voice_transcript').value  = text;
+  document.getElementById('desc_lang').value         = lang.split('-')[0];
+  setVoiceStatus('✅ Voice captured: "' + text.substring(0, 60) + (text.length > 60 ? '...' : '') + '"');
+
+  // Trigger AI suggestion
+  triggerAISuggest(text);
+}
+
+function setVoiceStatus(html) {
+  document.getElementById('voice-status').innerHTML = html;
+}
+
+
+// ─── AI SUGGESTION ────────────────────────────────────────────────────────────
+let aiTimer = null;
+
+document.getElementById('description').addEventListener('input', function() {
+  clearTimeout(aiTimer);
+  if (this.value.trim().length < 12) {
+    document.getElementById('ai-hint').classList.remove('show');
+    return;
+  }
+  document.getElementById('ai-spinner').style.display = 'block';
+  aiTimer = setTimeout(() => triggerAISuggest(this.value.trim()), 600);
+});
+
+function triggerAISuggest(text) {
+  const fd = new FormData();
+  fd.append('description', text);
+  fetch('/ai_suggest', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('ai-spinner').style.display = 'none';
+      if (data.available) {
+        document.getElementById('ai-category').textContent = data.category;
+        document.getElementById('ai-dept').textContent     = data.department;
+        document.getElementById('ai-conf').textContent     = '(' + data.confidence + '% confidence)';
+
+        const pb = document.getElementById('ai-priority');
+        pb.textContent  = data.priority || '';
+        pb.className    = 'priority-badge p-' + (data.priority || 'Normal');
+
+        document.getElementById('ai-hint').classList.add('show');
+
+        // Auto-select department if empty
+        const sel = document.getElementById('department');
+        if (!sel.value || sel.value === 'auto') {
+          for (let i = 0; i < sel.options.length; i++) {
+            if (sel.options[i].value === data.department) {
+              sel.selectedIndex = i; break;
+            }
+          }
+        }
+      }
+    })
+    .catch(() => { document.getElementById('ai-spinner').style.display = 'none'; });
+}
+
+
+// ─── MEDIA PREVIEW ────────────────────────────────────────────────────────────
+function previewImage(input) {
+  const img = document.getElementById('preview-img');
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => { img.src = e.target.result; img.style.display = 'block'; };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function previewVideo(input) {
+  const vid = document.getElementById('preview-vid');
+  if (input.files && input.files[0]) {
+    vid.src = URL.createObjectURL(input.files[0]);
+    vid.style.display = 'block';
+  }
+}
+</script>
+</body>
+</html>

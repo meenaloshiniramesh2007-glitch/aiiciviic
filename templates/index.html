@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Civic Guardian</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#f0f4f8; color:#333; }
+    nav { background:#1a237e; color:#fff; padding:14px 32px; display:flex; justify-content:space-between; align-items:center; }
+    nav h1 { font-size:1.3rem; letter-spacing:1px; }
+    nav a { color:#fff; text-decoration:none; margin-left:18px; font-size:.95rem; }
+    nav a:hover { text-decoration:underline; }
+    .hero { background:linear-gradient(135deg,#1a237e,#283593); color:#fff; text-align:center; padding:80px 20px; }
+    .hero h2 { font-size:2.4rem; margin-bottom:16px; }
+    .hero p  { font-size:1.1rem; max-width:600px; margin:0 auto 32px; opacity:.9; }
+    .hero-btns a { display:inline-block; margin:8px; padding:14px 32px; border-radius:6px; font-size:1rem; text-decoration:none; font-weight:600; }
+    .btn-primary { background:#ffca28; color:#1a237e; }
+    .btn-outline { background:transparent; color:#fff; border:2px solid #fff; }
+    .btn-primary:hover { background:#ffd54f; }
+    .btn-outline:hover { background:rgba(255,255,255,.1); }
+    .features { display:flex; flex-wrap:wrap; justify-content:center; gap:24px; padding:60px 32px; background:#fff; }
+    .card { background:#f7f9ff; border-radius:10px; padding:28px 24px; width:220px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,.08); }
+    .card .icon { font-size:2.2rem; margin-bottom:12px; }
+    .card h3 { font-size:1rem; color:#1a237e; margin-bottom:8px; }
+    .card p  { font-size:.85rem; color:#666; }
+    .section-title { text-align:center; padding:40px 20px 10px; font-size:1.6rem; color:#1a237e; }
+    .categories { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; padding:10px 40px 50px; }
+    .tag { background:#e8eaf6; color:#283593; padding:8px 18px; border-radius:20px; font-size:.85rem; }
+    footer { background:#1a237e; color:#aab; text-align:center; padding:18px; font-size:.85rem; }
+    .flash-messages { max-width:600px; margin:16px auto; }
+    .flash { padding:10px 16px; border-radius:6px; margin-bottom:8px; font-size:.9rem; }
+    .flash.success { background:#e8f5e9; color:#2e7d32; border-left:4px solid #43a047; }
+    .flash.error   { background:#ffebee; color:#c62828; border-left:4px solid #ef5350; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <h1>🏛️ AI Civic Guardian</h1>
+  <div>
+    <a href="{{ url_for('login') }}">Login</a>
+    <a href="{{ url_for('register') }}">Register</a>
+  </div>
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-messages">
+      {% for cat, msg in messages %}
+        <div class="flash {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<div class="hero">
+  <h2>Smart Civic Complaint Management</h2>
+  <p>Report civic issues in your city — potholes, garbage, water leaks, streetlights and more. Powered by AI to classify, route, and track complaints faster.</p>
+  <div class="hero-btns">
+    <a href="{{ url_for('register') }}" class="btn-primary">Register Now</a>
+    <a href="{{ url_for('login') }}"    class="btn-outline">Login</a>
+  </div>
+</div>
+
+<div class="features">
+  <div class="card"><div class="icon">📸</div><h3>Upload Photo</h3><p>Attach an image of the civic issue for faster processing.</p></div>
+  <div class="card"><div class="icon">🤖</div><h3>AI Classification</h3><p>AI auto-detects complaint type and routes to the right department.</p></div>
+  <div class="card"><div class="icon">📍</div><h3>Location Tracking</h3><p>Add your location so officers can find and fix the issue quickly.</p></div>
+  <div class="card"><div class="icon">🔄</div><h3>Status Updates</h3><p>Track your complaint from Pending to Resolved in real time.</p></div>
+  <div class="card"><div class="icon">👮</div><h3>Officer Dashboard</h3><p>Officers manage and update complaint status efficiently.</p></div>
+  <div class="card"><div class="icon">📊</div><h3>Admin Analytics</h3><p>Admins monitor all complaints, users, and department stats.</p></div>
+</div>
+
+<h2 class="section-title">Departments Covered</h2>
+<div class="categories">
+  <span class="tag">🛣️ Roads & Infrastructure</span>
+  <span class="tag">🗑️ Sanitation & Waste</span>
+  <span class="tag">💧 Water Supply & Sewage</span>
+  <span class="tag">💡 Electricity & Lighting</span>
+  <span class="tag">🏗️ Public Works</span>
+  <span class="tag">🏢 Building & Planning</span>
+  <span class="tag">🏛️ Municipal Corporation</span>
+  <span class="tag">🌳 Horticulture & Parks</span>
+  <span class="tag">🌫️ Environment & Pollution</span>
+  <span class="tag">🐾 Animal Control</span>
+  <span class="tag">🚦 Traffic Engineering</span>
+  <span class="tag">🔧 Civic Maintenance</span>
+</div>
+
+<footer>© 2024 AI Civic Guardian — Final Year Project | Flask + SQLite + AI</footer>
+</body>
+</html>

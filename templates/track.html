@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Track Complaints — AI Civic Guardian</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#f0f4f8; }
+    nav { background:#1a237e; color:#fff; padding:14px 32px; display:flex; justify-content:space-between; align-items:center; }
+    nav h1 { font-size:1.2rem; }
+    nav a  { color:#fff; text-decoration:none; margin-left:14px; font-size:.9rem; }
+    .container { max-width:980px; margin:32px auto; padding:0 16px; }
+    h2 { color:#1a237e; margin-bottom:20px; }
+    .filter-bar { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+    .filter-bar a { padding:8px 18px; border-radius:20px; text-decoration:none; font-size:.85rem; font-weight:600; background:#e8eaf6; color:#3949ab; }
+    .filter-bar a.active { background:#1a237e; color:#fff; }
+    table { width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+    th { background:#1a237e; color:#fff; padding:12px 14px; font-size:.85rem; text-align:left; }
+    td { padding:12px 14px; font-size:.85rem; border-bottom:1px solid #eee; vertical-align:top; }
+    tr:last-child td { border-bottom:none; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:.75rem; font-weight:600; }
+    .badge-pending  { background:#fff3e0; color:#e65100; }
+    .badge-progress { background:#e3f2fd; color:#0d47a1; }
+    .badge-resolved { background:#e8f5e9; color:#2e7d32; }
+    .badge-rejected { background:#ffebee; color:#c62828; }
+    .btn { display:inline-block; padding:5px 12px; background:#1a237e; color:#fff; border-radius:5px; text-decoration:none; font-size:.8rem; }
+    .empty-state { text-align:center; padding:60px 20px; color:#999; background:#fff; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+    .ai-tag { font-size:.75rem; color:#5c35c8; background:#ede7f6; padding:2px 8px; border-radius:10px; }
+    .progress-wrap { display:flex; align-items:center; gap:8px; }
+    .step { width:28px; height:28px; border-radius:50%; background:#e0e0e0; display:flex; align-items:center; justify-content:center; font-size:.7rem; font-weight:700; color:#888; }
+    .step.done { background:#1a237e; color:#fff; }
+    .step.current { background:#ff9800; color:#fff; }
+    .line { flex:1; height:3px; background:#e0e0e0; }
+    .line.done { background:#1a237e; }
+  </style>
+</head>
+<body>
+<nav>
+  <h1>🏛️ AI Civic Guardian</h1>
+  <div>
+    <a href="{{ url_for('user_dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('complaint') }}">+ New</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h2>📍 Track My Complaints</h2>
+
+  <div class="filter-bar">
+    <a href="{{ url_for('track') }}" class="{{ 'active' if not selected_status }}">All</a>
+    {% for s in status_list %}
+      <a href="{{ url_for('track', status=s) }}" class="{{ 'active' if selected_status == s }}">{{ s }}</a>
+    {% endfor %}
+  </div>
+
+  {% if complaints %}
+  <table>
+    <thead>
+      <tr>
+        <th>#ID</th>
+        <th>Department</th>
+        <th>Location</th>
+        <th>Description</th>
+        <th>AI Label</th>
+        <th>Status</th>
+        <th>Progress</th>
+        <th>Date</th>
+        <th>Details</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for c in complaints %}
+    {% set s = c['status'] %}
+      <tr>
+        <td><strong>#{{ c['id'] }}</strong></td>
+        <td>{{ c['department'] }}</td>
+        <td>{{ c['location'] }}</td>
+        <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ c['description'] }}">{{ c['description'] }}</td>
+        <td>
+          {% if c['ai_image_label'] %}
+            <span class="ai-tag">🖼️ {{ c['ai_image_label'] }}</span>
+          {% elif c['ai_category'] %}
+            <span class="ai-tag">🤖 {{ c['ai_category'] }}</span>
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          {% if s == 'Pending' %}      <span class="badge badge-pending">{{ s }}</span>
+          {% elif s == 'In Progress' %}<span class="badge badge-progress">{{ s }}</span>
+          {% elif s == 'Resolved' %}   <span class="badge badge-resolved">{{ s }}</span>
+          {% else %}                   <span class="badge badge-rejected">{{ s }}</span>
+          {% endif %}
+        </td>
+        <td>
+          <div class="progress-wrap">
+            <div class="step {{ 'done' if s in ['Pending','In Progress','Resolved'] }}">1</div>
+            <div class="line  {{ 'done' if s in ['In Progress','Resolved'] }}"></div>
+            <div class="step {{ 'current' if s == 'In Progress' }}{{ ' done' if s == 'Resolved' }}">2</div>
+            <div class="line  {{ 'done' if s == 'Resolved' }}"></div>
+            <div class="step {{ 'done' if s == 'Resolved' }}">3</div>
+          </div>
+        </td>
+        <td>{{ c['submitted_at'][:10] if c['submitted_at'] else '—' }}</td>
+        <td><a href="{{ url_for('complaint_letter', complaint_id=c['id']) }}" class="btn">View</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <p style="font-size:2rem">🔍</p>
+    <p style="margin-top:12px;">No complaints found{% if selected_status %} with status "{{ selected_status }}"{% endif %}.</p>
+  </div>
+  {% endif %}
+</div>
+</body>
+</html>
